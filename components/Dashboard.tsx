@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingList } from '../types';
-import { createList, removeList } from '../services/firebase';
+import { createList, removeList, auth, updateProfile } from '../services/firebase';
 
 interface DashboardProps {
     userId: string;
@@ -12,6 +12,37 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ userId, lists, onSelectList, onLogout }) => {
     const [newListName, setNewListName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    
+    // User Name State
+    const [displayName, setDisplayName] = useState('');
+
+    // Delete Logic State
+    const [pressingListId, setPressingListId] = useState<string | null>(null);
+    const [countdown, setCountdown] = useState(3);
+    const intervalRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (auth.currentUser?.displayName) {
+            setDisplayName(auth.currentUser.displayName);
+        }
+    }, []);
+
+    // Watch for countdown completion
+    useEffect(() => {
+        if (countdown === 0 && pressingListId) {
+            performDelete(pressingListId);
+        }
+    }, [countdown, pressingListId]);
+
+    const handleUpdateName = async () => {
+        if (auth.currentUser && displayName.trim() !== auth.currentUser.displayName) {
+            try {
+                await updateProfile(auth.currentUser, { displayName: displayName.trim() });
+            } catch (e) {
+                console.error("Error updating profile", e);
+            }
+        }
+    };
 
     const handleCreate = async () => {
         if (!newListName.trim()) return;
@@ -27,34 +58,82 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId, lists, onSelectLis
         }
     };
 
-    const handleDelete = async (e: React.MouseEvent, listId: string) => {
-        // Standard React stopPropagation is sufficient and safer
+    const startDelete = (e: React.MouseEvent | React.TouchEvent, listId: string) => {
+        e.preventDefault();
         e.stopPropagation();
+        
+        // Clear any existing timer just in case
+        if (intervalRef.current) clearInterval(intervalRef.current);
 
-        if (window.confirm('Tem certeza que deseja apagar esta lista permanentemente?')) {
-            try {
-                await removeList(userId, listId);
-            } catch (error: any) {
-                console.error("Erro ao deletar:", error);
-                alert("Não foi possível apagar a lista: " + error.message);
-            }
+        setPressingListId(listId);
+        setCountdown(3);
+
+        intervalRef.current = setInterval(() => {
+            setCountdown((prev) => prev - 1);
+        }, 1000);
+    };
+
+    const cancelDelete = (e?: React.MouseEvent | React.TouchEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+        setPressingListId(null);
+        setCountdown(3);
+    };
+
+    const performDelete = async (listId: string) => {
+        // Stop timer
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+        setPressingListId(null);
+        setCountdown(3);
+
+        // Haptic feedback if available
+        if (navigator.vibrate) navigator.vibrate(200);
+
+        try {
+            await removeList(userId, listId);
+        } catch (error: any) {
+            console.error("Erro ao deletar:", error);
+            alert("Não foi possível apagar a lista: " + error.message);
         }
     };
 
     return (
         <div className="fade-in max-w-3xl mx-auto pb-20">
             {/* Header Section */}
-            <div className="flex justify-between items-end mb-8 px-2 pt-4">
-                <div>
-                    <p className="text-gray-500 font-medium text-xs mb-1 uppercase tracking-wider">Bem-vindo de volta</p>
-                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-                        Suas <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Listas</span>
-                    </h1>
+            <div className="flex justify-between items-start mb-8 px-2 pt-4">
+                <div className="flex-1 mr-4">
+                    <p className="text-gray-500 font-medium text-xs mb-2 uppercase tracking-wider">Bem-vindo de volta,</p>
+                    
+                    {/* Campo de Nome Estilizado */}
+                    <div className="relative group mb-1">
+                        <input 
+                            type="text" 
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            onBlur={handleUpdateName}
+                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                            placeholder="Digite seu nome..."
+                            className="text-2xl font-extrabold text-gray-900 bg-transparent border-b-2 border-gray-200 hover:border-indigo-400 focus:border-indigo-600 focus:outline-none w-full max-w-[280px] transition-all placeholder-gray-300 py-1"
+                        />
+                        <i className="fas fa-pen text-xs text-gray-400 absolute right-full top-1/2 -translate-y-1/2 mr-3 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                    
+                    <p className="text-gray-400 text-sm mt-2">Suas <span className="font-bold text-indigo-500">Listas de Compras</span></p>
                 </div>
                 <button 
                     type="button"
                     onClick={onLogout}
-                    className="bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 p-3 rounded-2xl transition shadow-sm border border-gray-100" 
+                    className="bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 p-3 rounded-2xl transition shadow-sm border border-gray-100 shrink-0" 
                     title="Sair"
                 >
                     <i className="fas fa-sign-out-alt"></i>
@@ -95,21 +174,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ userId, lists, onSelectLis
                     const done = list.items?.filter(i => i.checked).length || 0;
                     const progress = total ? (done / total) * 100 : 0;
                     const isCompleted = total > 0 && done === total;
+                    const isPressing = pressingListId === list.id;
 
                     return (
                         <div 
                             key={list.id}
                             className="group relative bg-white rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 overflow-hidden"
                         >
-                            {/* 1. DELETE BUTTON - Highest Z-Index to ensure clickability */}
+                            {/* 1. DELETE BUTTON - Hold to delete */}
                             <div className="absolute top-0 right-0 p-3 z-[100]">
                                 <button 
                                     type="button"
-                                    onClick={(e) => handleDelete(e, list.id)}
-                                    className="w-10 h-10 flex items-center justify-center bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-all duration-200 shadow-sm border border-gray-100 hover:border-red-200 cursor-pointer active:scale-90 hover:scale-110"
-                                    title="Excluir Lista"
+                                    // Mouse Events
+                                    onMouseDown={(e) => startDelete(e, list.id)}
+                                    onMouseUp={cancelDelete}
+                                    onMouseLeave={cancelDelete}
+                                    // Touch Events
+                                    onTouchStart={(e) => startDelete(e, list.id)}
+                                    onTouchEnd={cancelDelete}
+                                    onTouchCancel={cancelDelete}
+                                    // Prevent Context Menu on long press
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 shadow-sm border cursor-pointer select-none
+                                        ${isPressing 
+                                            ? 'bg-red-500 border-red-500 text-white scale-110 shadow-md' 
+                                            : 'bg-white border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200'
+                                        }`}
+                                    title="Segure para excluir"
                                 >
-                                    <i className="fas fa-trash-alt text-sm pointer-events-none"></i>
+                                    {isPressing ? (
+                                        <span className="font-bold text-lg animate-pulse">{countdown}</span>
+                                    ) : (
+                                        <i className="fas fa-trash-alt text-sm pointer-events-none"></i>
+                                    )}
                                 </button>
                             </div>
 

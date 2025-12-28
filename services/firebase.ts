@@ -1,8 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, updateProfile } from "firebase/auth";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { ShoppingList, ShoppingItem } from "../types";
 
+// NOTE: Em aplicativos Single Page Application (SPA) que rodam diretamente no navegador sem backend próprio,
+// a API Key precisa estar exposta para que o cliente conecte ao Firebase.
+// A segurança NÃO depende de esconder essa chave, mas sim das "Regras de Segurança do Firestore"
+// configuradas no console do Firebase e das restrições de domínio (HTTP Referrer).
 const firebaseConfig = {
     apiKey: "AIzaSyDoyIgr10VEBwpDjNZcdLEDP2yIREW6KKk", 
     authDomain: "lista-de-compras-app-1446f.firebaseapp.com",
@@ -16,6 +20,9 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Export updateProfile for use in components
+export { updateProfile };
 
 // Path helper to match the specific structure requested
 const getListsCollection = (userId: string) => 
