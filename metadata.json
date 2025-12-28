@@ -1,0 +1,5 @@
+{
+  "name": "Minha Lista Inteligente",
+  "description": "An intelligent shopping list application with category detection, cost estimation, and recipe suggestions.",
+  "requestFramePermissions": []
+}
