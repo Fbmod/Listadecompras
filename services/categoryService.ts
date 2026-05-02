@@ -51,6 +51,7 @@ const categoryDB: Record<string, string[]> = {
         'arroz', 'feijao', 'feijão', 'macarrao', 'macarrão', 'oleo', 'óleo', 'azeite', 'sal', 
         'acucar', 'açúcar', 'cafe', 'café', 'farinha', 'fuba', 'fubá', 'milho de pipoca', 
         'ervilha', 'lentilha', 'grao de bico', 'grão de bico', 'soja', 'trigo', 'amido', 'maizena',
+        'tapioca',
         // Matinais e Lanches
         'biscoito', 'bolacha', 'torrada', 'cereal', 'aveia', 'granola', 'mel', 'chocolate', 
         'achocolatado', 'nescau', 'toddy', 'bombom', 'barra de cereal', 'geleia', 'chocolates',
@@ -60,12 +61,11 @@ const categoryDB: Record<string, string[]> = {
         'palmito', 'azeitona', 'cogumelo em conserva', 'picles', 'seleta', 'milho em lata',
         'sardinha em lata', 'atum em lata', 
         // Instantâneos
-        'miojo', 'lamen', 'sopa', 'pipoca', 'gelatina', 'pudim', 'leite de coco', 'creme de cebola', 
+        'massa', 'macarrão', 'miojo', 'lamen', 'sopa', 'pipoca', 'gelatina', 'pudim', 'leite de coco', 'creme de cebola', 
         // Temperos
         'tempero', 'pimenta', 'oregano', 'orégano', 'caldo', 'sazon', 'knorr', 'maggi', 'ajinomoto',
         'cominho', 'colorau', 'curry', 'chimichurri', 'paprica', 'páprica', 'canela', 'cravo',
-        // Pets
-        'racao', 'ração', 'petisco', 'areia de gato', 'sache', 'sachê', 'whiskas', 'pedigree'
+        
     ],
     'Padaria': [
         'pao', 'pão', 'frances', 'baguete', 'ciabatta', 'sonho', 'bolo', 'torta', 'pao de queijo', 
@@ -96,6 +96,12 @@ const categoryDB: Record<string, string[]> = {
         'cotonete', 'hastes flexiveis', 'algodao', 'algodão', 'absorvente', 'fralda', 'lenco', 
         'lenço', 'gilete', 'lâmina', 'barbear', 'espuma de barbear', 'pos barba', 'talco', 
         'esmalte', 'acetona', 'lixa', 'cortador', 'pinca', 'pinça', 'maquiagem', 'rimel', 'batom'
+    ],
+    'Pets': [
+        'racao', 'ração', 'petisco', 'areia de gato', 'sache', 'sachê', 'whiskas', 'pedigree'
+    ],
+    'Escolar': [
+        'Apontador', 'borracha', 'cola', 'caderno', 'lápis', 'lapis', 'caneta', 'canetinha'
     ]
 };
 
