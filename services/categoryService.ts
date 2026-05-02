@@ -101,7 +101,7 @@ const categoryDB: Record<string, string[]> = {
         'racao', 'ração', 'petisco', 'areia de gato', 'sache', 'sachê', 'whiskas', 'pedigree'
     ],
     'Escolar': [
-        'Apontador', 'borracha', 'cola', 'caderno', 'lápis', 'lapis', 'caneta', 'canetinha'
+        'apontador', 'borracha escolar', 'cola', 'caderno', 'lápis', 'lapis', 'caneta', 'canetinha'
     ]
 };
 
